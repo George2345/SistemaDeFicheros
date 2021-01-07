@@ -28,34 +28,33 @@ void GrabarDatos(EXT_DATOS *memdatos, FILE *fich);
 
 int ComprobarComando(char *strcomando, char *orden, char *argumento1, char *argumento2){
    int flag = 1;
-   int aux = 0, aux2 = 0, aux3 = 0;
+   int aux = 0, aux1 = 0, aux2 = 0, aux3 = 0;
    for (int i = 0; strcomando[i] != '\0'; i++){
+      for (int i = 0; orden[i] != '\0'; i++){
+         printf("%c", orden[i]);
+      }
       if (strcomando[i] != ' ' && aux == 0){
-         orden[i] = strcomando[i];
+         orden[aux1] = strcomando[i];
+         aux1++;
+         printf("\neeeeee%d", aux1);
       }
       else if (strcomando[i] != ' ' && aux == 1){
          argumento1[aux2] = strcomando[i];
          aux2++;
+         printf("\n%d", aux2);
       }
       else if (strcomando[i] != ' ' && aux == 2){
          argumento2[aux3] = strcomando[i];
          aux3++;
+         printf("\n%d", aux3);
       }
       if (strcomando[i] == ' '){
          aux++;
+         printf("\n%d", aux);
       }
    }
-   for (int i = 0; orden[i] != '\0'; i++){
-      printf("%c", orden[i]);
-   }
-   printf("\n");
-   for (int i = 0; argumento1[i] != '\0'; i++){
-      printf("%c", argumento1[i]);
-   }
-   printf("\n");
-   for (int i = 0; argumento2[i] != '\0'; i++){
-      printf("%c", argumento2[i]);
-   }
+   int result = strcmp(orden, "s")==10;
+   printf("\n%d\n", result);
    if ((strcmp(orden, "info")==10 || strcmp(orden, "bytemaps")==10 || strcmp(orden, "dir")==10) && argumento1[0] == '\0' && argumento2[0] == '\0'){
       flag = 0;
    }
