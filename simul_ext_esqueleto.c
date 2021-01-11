@@ -28,8 +28,9 @@ void GrabarDatos(EXT_DATOS *memdatos, FILE *fich);
 
 int ComprobarComando(char *strcomando, char *orden, char *argumento1, char *argumento2){
    int flag = 1;
-   char cadena[20];
+   char cadena[2];
    int aux = 0, aux1 = 0, aux2 = 0, aux3 = 0;
+   cadena[0] = 'a';
    for (int i = 0; strcomando[i] != '\0'; i++){
       if (strcomando[i] != ' ' && aux == 0 && (strcomando[i] >= 'a' && strcomando[i] <= 'z')){
          orden[aux1] = strcomando[i];
@@ -45,8 +46,15 @@ int ComprobarComando(char *strcomando, char *orden, char *argumento1, char *argu
       }
       if (strcomando[i] == ' '){
          aux++;
+         if (aux == 1 || aux == 2){
+            strcomando[strlen(strcomando)-1] = ' '; 
+         }
       }
    }
+   /*printf("%d\n", strlen(strcomando));
+   printf("%d\n", strlen(orden));
+   printf("%d\n", strlen(argumento1));
+   printf("%d\n", strlen(argumento2));*/
    if ((strcmp(orden, "info")==0 || strcmp(orden, "bytemaps")==0 || strcmp(orden, "dir")==0 || strcmp(orden, "salir")==0) && argumento1[0] == '\0' && argumento2[0] == '\0'){
       flag = 0;
    }
@@ -83,97 +91,175 @@ void Printbytemaps(EXT_BYTE_MAPS *ext_bytemaps) {
    }
    printf("\n");
 } 
-//sizeof(inodos->blq_inodos[directorio->dir_inodo].i_nbloque)
+
 void Directorio(EXT_ENTRADA_DIR *directorio, EXT_BLQ_INODOS *inodos){
    for (int i = 1; i < sizeof(directorio); i++){
       printf("%s", directorio[i].dir_nfich);
       printf("\ttamanio:%d", inodos->blq_inodos[directorio[i].dir_inodo].size_fichero);
       printf("\tinodo:%d\t bloques: ", directorio[i].dir_inodo);
-      printf("Size: %d\n", sizeof(inodos->blq_inodos[directorio[i].dir_inodo].i_nbloque));
-      /*for (int j = 0; j < 1; j++){
-         printf("%d ", inodos->blq_inodos[directorio[i].dir_inodo].i_nbloque[j]);
-      }*/
+      for (int j = 0; j < MAX_NUMS_BLOQUE_INODO; j++){
+         if (inodos->blq_inodos[directorio[i].dir_inodo].i_nbloque[j] != 65535){
+            printf("%d ", inodos->blq_inodos[directorio[i].dir_inodo].i_nbloque[j]);
+         }
+      }
       printf("\n");
    }  
 }
 
+int Renombrar(EXT_ENTRADA_DIR *directorio, EXT_BLQ_INODOS *inodos, char *nombreantiguo, char *nombrenuevo){
+   int flag = 0, aux = 1;
+
+   //Comprobacion de la existencia de los ficheros
+   for (int i = 1; i < sizeof(directorio); i++){
+      if (strcmp(nombreantiguo, directorio[i].dir_nfich)!=0){
+         aux++;
+      }
+      if (strcmp(nombrenuevo, directorio[i].dir_nfich)==0){
+         printf("ERROR: El fichero %s ya existe\n", nombrenuevo);
+         flag = 1;
+         break;
+      }
+      if (aux == sizeof(directorio)){
+         printf("ERROR: Fichero %s no encontrado\n", nombreantiguo);
+         flag = 1;
+      }
+   }
+   if (flag == 0){
+      for (int i = 1; i < sizeof(directorio); i++){
+         if (strcmp(nombreantiguo, directorio[i].dir_nfich)==0){
+            strcpy(directorio[i].dir_nfich, nombrenuevo);
+         }
+      }
+   }
+
+   return flag;
+}
+
+int BuscaFich(EXT_ENTRADA_DIR *directorio, EXT_BLQ_INODOS *inodos, char *nombre){
+   int flag = 0, aux = 1;
+   
+   for (int i = 1; i < sizeof(directorio); i++){
+      if (strcmp(nombre, directorio[i].dir_nfich)!=0){
+         aux++;
+      }
+      if (aux == sizeof(directorio)){
+         printf("ERROR: Fichero %s no encontrado\n", nombre);
+         flag = 1;
+      }
+   }
+   return flag;
+}
+
+int Imprimir(EXT_ENTRADA_DIR *directorio, EXT_BLQ_INODOS *inodos, EXT_DATOS *memdatos, char *nombre) {
+   int flag = 0;
+   int buscaFich = BuscaFich(directorio, inodos, nombre);
+   char a[50] = "hola que ase";
+   char b[50] = "adios muy buenas";
+   puts(b);
+   //memset(b, 0, strlen(b));
+   memcpy(b, a, strlen(a));
+   puts(b);
+   /*if (buscaFich == 0){
+      memset(memdatos->dato, 0, SIZE_BLOQUE);
+      for (int i = 1; i < sizeof(directorio); i++){
+         if (strcmp(nombre, directorio[i].dir_nfich)==0){
+            memcpy(&memdatos->dato, &inodos->blq_inodos[directorio[i].dir_inodo].i_nbloque, 1);
+         }
+      }
+   }
+   puts(memdatos->dato);*/
+   
+   return flag;
+}
+
+
+void Grabarinodosydirectorio(EXT_ENTRADA_DIR *directorio, EXT_BLQ_INODOS *inodos, FILE *fich){
+
+}
+
+void GrabarSuperBloque(EXT_SIMPLE_SUPERBLOCK *ext_superblock, FILE *fich){
+   ext_superblock->s_free_blocks_count--;
+   fwrite(&ext_superblock->s_free_blocks_count, sizeof(ext_superblock->s_free_blocks_count), 1, fich);
+}
+
+
 int main()
 {
-	 char comando[LONGITUD_COMANDO];
-	 char orden[LONGITUD_COMANDO];
-	 char argumento1[LONGITUD_COMANDO];
-	 char argumento2[LONGITUD_COMANDO];
+	char comando[LONGITUD_COMANDO];
+	char orden[LONGITUD_COMANDO];
+	char argumento1[LONGITUD_COMANDO];
+	char argumento2[LONGITUD_COMANDO];
 	 
-	 int i,j;
-	 unsigned long int m;
-     EXT_SIMPLE_SUPERBLOCK ext_superblock;
-     EXT_BYTE_MAPS ext_bytemaps;
-     EXT_BLQ_INODOS ext_blq_inodos;
-     EXT_ENTRADA_DIR directorio[MAX_FICHEROS];
-     EXT_DATOS memdatos[MAX_BLOQUES_DATOS];
-     EXT_DATOS datosfich[MAX_BLOQUES_PARTICION];
-     int entradadir;
-     int grabardatos;
-     FILE *fent;
-     
-     // Lectura del fichero completo de una sola vez
-     //...
-     
-     fent = fopen("particion.bin","r+b");
-     fread(&datosfich, SIZE_BLOQUE, MAX_BLOQUES_PARTICION, fent);    
-     
-     
-     memcpy(&ext_superblock,(EXT_SIMPLE_SUPERBLOCK *)&datosfich[0], SIZE_BLOQUE);
-     memcpy(&directorio,(EXT_ENTRADA_DIR *)&datosfich[3], SIZE_BLOQUE);
-     memcpy(&ext_bytemaps,(EXT_BLQ_INODOS *)&datosfich[1], SIZE_BLOQUE);
-     memcpy(&ext_blq_inodos,(EXT_BLQ_INODOS *)&datosfich[2], SIZE_BLOQUE);
-     memcpy(&memdatos,(EXT_DATOS *)&datosfich[4],MAX_BLOQUES_DATOS*SIZE_BLOQUE);
-     
-     // Buce de tratamiento de comandos
-     for (;;){
-		 do {
-		 printf (">> ");
-		 fflush(stdin);
-		 fgets(comando, LONGITUD_COMANDO, stdin);
-       memset(orden, 0, LONGITUD_COMANDO);
-       memset(argumento1, 0, LONGITUD_COMANDO);
-       memset(argumento2, 0, LONGITUD_COMANDO);
-		 } while (ComprobarComando(comando,orden,argumento1,argumento2) !=0);
-	      if (strcmp(orden,"dir")==0) {
-            Directorio(directorio,&ext_blq_inodos);
-            continue;
-         }
-         else if (strcmp(orden, "info")==0){
-            LeeSuperBloque(&ext_superblock);  
-         }
-         else if (strcmp(orden, "bytemaps")==0){
-            Printbytemaps(&ext_bytemaps);  
-         }
-         else if (strcmp(orden, "rename")==0){
-            //Renombrar(&directorio, &ext_blq_inodos, argumento1, argumento2);
-         }
-         else if (strcmp(orden, "copy")==0){
-            //Renombrar(&directorio, &ext_blq_inodos, argumento1, argumento2);
-         }
-         else if (strcmp(orden, "imprimir")==0){
-            //Renombrar(&directorio, &ext_blq_inodos, argumento1, argumento2);
-         }
-         else if (strcmp(orden, "remove")==0){
-            //Renombrar(&directorio, &ext_blq_inodos, argumento1, argumento2);
-         }
-         /* Escritura de metadatos en comandos rename, remove, copy     
-         Grabarinodosydirectorio(&directorio,&ext_blq_inodos,fent);
-         GrabarByteMaps(&ext_bytemaps,fent);
-         GrabarSuperBloque(&ext_superblock,fent);
-         if (grabardatos)
-           GrabarDatos(&memdatos,fent);
-         grabardatos = 0;*/
-         //Si el comando es salir se habrán escrito todos los metadatos
-         //faltan los datos y cerrar
-         if (strcmp(orden,"salir")==0){
-            //GrabarDatos(&memdatos,fent);
-            fclose(fent);
-            return 0;
-         }
-     }
+	int i,j;
+	unsigned long int m;
+   EXT_SIMPLE_SUPERBLOCK ext_superblock;
+   EXT_BYTE_MAPS ext_bytemaps;
+   EXT_BLQ_INODOS ext_blq_inodos;
+   EXT_ENTRADA_DIR directorio[MAX_FICHEROS];
+   EXT_DATOS memdatos[MAX_BLOQUES_DATOS];
+   EXT_DATOS datosfich[MAX_BLOQUES_PARTICION];
+   int entradadir;
+   int grabardatos;
+   FILE *fent;
+   
+   // Lectura del fichero completo de una sola vez
+   //...
+   
+   fent = fopen("particion.bin","r+b");
+   fread(&datosfich, SIZE_BLOQUE, MAX_BLOQUES_PARTICION, fent);    
+   
+   
+   memcpy(&ext_superblock,(EXT_SIMPLE_SUPERBLOCK *)&datosfich[0], SIZE_BLOQUE);
+   memcpy(&directorio,(EXT_ENTRADA_DIR *)&datosfich[3], SIZE_BLOQUE);
+   memcpy(&ext_bytemaps,(EXT_BLQ_INODOS *)&datosfich[1], SIZE_BLOQUE);
+   memcpy(&ext_blq_inodos,(EXT_BLQ_INODOS *)&datosfich[2], SIZE_BLOQUE);
+   memcpy(&memdatos,(EXT_DATOS *)&datosfich[4],MAX_BLOQUES_DATOS*SIZE_BLOQUE);
+   
+   // Bucle de tratamiento de comandos
+   for (;;){
+      do {
+      printf (">> ");
+      fflush(stdin);
+      fgets(comando, LONGITUD_COMANDO, stdin);
+      memset(orden, 0, LONGITUD_COMANDO);
+      memset(argumento1, 0, LONGITUD_COMANDO);
+      memset(argumento2, 0, LONGITUD_COMANDO);
+      } while (ComprobarComando(comando,orden,argumento1,argumento2) !=0);
+      if (strcmp(orden,"dir")==0) {
+         Directorio(directorio,&ext_blq_inodos);
+         continue;
+      }
+      else if (strcmp(orden, "info")==0){
+         LeeSuperBloque(&ext_superblock);  
+      }
+      else if (strcmp(orden, "bytemaps")==0){
+         Printbytemaps(&ext_bytemaps);  
+      }
+      else if (strcmp(orden, "rename")==0){
+         Renombrar(directorio, &ext_blq_inodos, argumento1, argumento2);
+      }
+      else if (strcmp(orden, "copy")==0){
+         //Renombrar(&directorio, &ext_blq_inodos, argumento1, argumento2);
+      }
+      else if (strcmp(orden, "imprimir")==0){
+         Imprimir(directorio, &ext_blq_inodos, memdatos, argumento1);
+      }
+      else if (strcmp(orden, "remove")==0){
+         //Renombrar(&directorio, &ext_blq_inodos, argumento1, argumento2);
+      }
+      //Escritura de metadatos en comandos rename, remove, copy     
+      //Grabarinodosydirectorio(&directorio,&ext_blq_inodos,fent);
+      //GrabarByteMaps(&ext_bytemaps,fent);
+      GrabarSuperBloque(&ext_superblock,fent);
+      /*if (grabardatos)
+         GrabarDatos(&memdatos,fent);
+      grabardatos = 0;*/
+      //Si el comando es salir se habrán escrito todos los metadatos
+      //faltan los datos y cerrar
+      if (strcmp(orden,"salir")==0){
+         //GrabarDatos(&memdatos,fent);
+         fclose(fent);
+         return 0;
+      }
+   }
 }
