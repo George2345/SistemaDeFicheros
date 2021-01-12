@@ -80,7 +80,7 @@ void LeeSuperBloque(EXT_SIMPLE_SUPERBLOCK *psup){
 
 void Printbytemaps(EXT_BYTE_MAPS *ext_bytemaps) {
    printf("Inodos :");
-   for (int i = 0; i < MAX_INODOS; i++){
+   for (int i = 1; i < MAX_INODOS; i++){
       printf("%d ", ext_bytemaps->bmap_inodos[i]);
    }
    printf("\nBloques [0-25] :");
@@ -91,15 +91,16 @@ void Printbytemaps(EXT_BYTE_MAPS *ext_bytemaps) {
 } 
 
 void Directorio(EXT_ENTRADA_DIR *directorio, EXT_BLQ_INODOS *inodos){
+   printf("%ld", sizeof(directorio));
    for (int i = 1; i < sizeof(directorio); i++){
       printf("%s", directorio[i].dir_nfich);
-      printf("\ttamanio:%d", inodos->blq_inodos[directorio[i].dir_inodo].size_fichero);
-      printf("\tinodo:%d\t bloques: ", directorio[i].dir_inodo);
-      for (int j = 0; j < MAX_NUMS_BLOQUE_INODO; j++){
+      //printf("\ttamanio:%d", inodos->blq_inodos[directorio[i].dir_inodo].size_fichero);
+      //printf("\tinodo:%d\t bloques: ", directorio[i].dir_inodo);
+      /*for (int j = 0; j < MAX_NUMS_BLOQUE_INODO; j++){
          if (inodos->blq_inodos[directorio[i].dir_inodo].i_nbloque[j] != 65535){
             printf("%d ", inodos->blq_inodos[directorio[i].dir_inodo].i_nbloque[j]);
          }
-      }
+      }*/
       printf("\n");
    }  
 }
@@ -172,11 +173,11 @@ int Imprimir(EXT_ENTRADA_DIR *directorio, EXT_BLQ_INODOS *inodos, EXT_DATOS *mem
 
 
 void Grabarinodosydirectorio(EXT_ENTRADA_DIR *directorio, EXT_BLQ_INODOS *inodos, FILE *fich){
-   printf("Graba directorio e inodos\n");
+   /*printf("Graba directorio e inodos\n");
    FILE *f;
    int a = 14;
    f = fopen("b.bin", "r+b");
-   fwrite(&a, sizeof(a), 1, f);
+   fwrite(&a, sizeof(a), 1, f);*/
    /*for (int i = 1; i < sizeof(directorio); i++){
       fwrite(&directorio[i].dir_nfich, sizeof(directorio[i].dir_nfich), strlen(directorio[i].dir_nfich), f);
    }*/
@@ -264,7 +265,7 @@ int main()
          //Renombrar(&directorio, &ext_blq_inodos, argumento1, argumento2);
       }
       //Escritura de metadatos en comandos rename, remove, copy     
-      Grabarinodosydirectorio(directorio,&ext_blq_inodos,fent);
+      //Grabarinodosydirectorio(directorio,&ext_blq_inodos,fent);
       //GrabarByteMaps(&ext_bytemaps,fent);
       //GrabarSuperBloque(&ext_superblock,fent);
       /*if (grabardatos)
