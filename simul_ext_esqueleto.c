@@ -28,9 +28,7 @@ void GrabarDatos(EXT_DATOS *memdatos, FILE *fich);
 
 int ComprobarComando(char *strcomando, char *orden, char *argumento1, char *argumento2){
    int flag = 1;
-   char cadena[2];
    int aux = 0, aux1 = 0, aux2 = 0, aux3 = 0;
-   cadena[0] = 'a';
    for (int i = 0; strcomando[i] != '\0'; i++){
       if (strcomando[i] != ' ' && aux == 0 && (strcomando[i] >= 'a' && strcomando[i] <= 'z')){
          orden[aux1] = strcomando[i];
@@ -174,11 +172,18 @@ int Imprimir(EXT_ENTRADA_DIR *directorio, EXT_BLQ_INODOS *inodos, EXT_DATOS *mem
 
 
 void Grabarinodosydirectorio(EXT_ENTRADA_DIR *directorio, EXT_BLQ_INODOS *inodos, FILE *fich){
-
+   printf("Graba directorio e inodos\n");
+   FILE *f;
+   int a = 14;
+   f = fopen("b.bin", "r+b");
+   fwrite(&a, sizeof(a), 1, f);
+   /*for (int i = 1; i < sizeof(directorio); i++){
+      fwrite(&directorio[i].dir_nfich, sizeof(directorio[i].dir_nfich), strlen(directorio[i].dir_nfich), f);
+   }*/
 }
 
 void GrabarSuperBloque(EXT_SIMPLE_SUPERBLOCK *ext_superblock, FILE *fich){
-   ext_superblock->s_free_blocks_count--;
+   //ext_superblock->s_free_blocks_count--;
    fwrite(&ext_superblock->s_free_blocks_count, sizeof(ext_superblock->s_free_blocks_count), 1, fich);
 }
 
@@ -206,6 +211,12 @@ int main()
    //...
    
    fent = fopen("particion.bin","r+b");
+
+   //Comprobacion de la existencia del fichero
+   if (fent == NULL){
+        printf("El fichero no existe\n");
+        return 0;
+    }
    fread(&datosfich, SIZE_BLOQUE, MAX_BLOQUES_PARTICION, fent);    
    
    
@@ -221,6 +232,8 @@ int main()
       printf (">> ");
       fflush(stdin);
       fgets(comando, LONGITUD_COMANDO, stdin);
+
+      //Limpieza de la cadena para que no lo una con basura
       memset(orden, 0, LONGITUD_COMANDO);
       memset(argumento1, 0, LONGITUD_COMANDO);
       memset(argumento2, 0, LONGITUD_COMANDO);
@@ -230,10 +243,12 @@ int main()
          continue;
       }
       else if (strcmp(orden, "info")==0){
-         LeeSuperBloque(&ext_superblock);  
+         LeeSuperBloque(&ext_superblock); 
+         continue; 
       }
       else if (strcmp(orden, "bytemaps")==0){
          Printbytemaps(&ext_bytemaps);  
+         continue;
       }
       else if (strcmp(orden, "rename")==0){
          Renombrar(directorio, &ext_blq_inodos, argumento1, argumento2);
@@ -243,14 +258,15 @@ int main()
       }
       else if (strcmp(orden, "imprimir")==0){
          Imprimir(directorio, &ext_blq_inodos, memdatos, argumento1);
+         continue;
       }
       else if (strcmp(orden, "remove")==0){
          //Renombrar(&directorio, &ext_blq_inodos, argumento1, argumento2);
       }
       //Escritura de metadatos en comandos rename, remove, copy     
-      //Grabarinodosydirectorio(&directorio,&ext_blq_inodos,fent);
+      Grabarinodosydirectorio(directorio,&ext_blq_inodos,fent);
       //GrabarByteMaps(&ext_bytemaps,fent);
-      GrabarSuperBloque(&ext_superblock,fent);
+      //GrabarSuperBloque(&ext_superblock,fent);
       /*if (grabardatos)
          GrabarDatos(&memdatos,fent);
       grabardatos = 0;*/
